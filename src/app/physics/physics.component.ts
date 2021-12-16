@@ -124,7 +124,8 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
       return; // Nothing to do as it does not meet our criteria
     }
     
-    this.notesService.emitNoteJarDisplay(a.plugin.data)
+    
+    this.notesService.removeFromJar(a.plugin.data)
   }
 
 }

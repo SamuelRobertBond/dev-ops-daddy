@@ -4,6 +4,8 @@ import { NoteData } from '../interface/note-data.interface';
 import { NotesApiService } from './notes-api.service';
 import { first } from "rxjs/operators"
 import { EventEmitter } from '@angular/core';
+import { MatDialog } from '@angular/material/dialog';
+import { NotesDialogComponent } from '../notes-dialog/notes-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -11,7 +13,8 @@ import { EventEmitter } from '@angular/core';
 export class NotesService {
 
   notesMap: Map<string, NoteData> = new Map();
-  addedNotes: NoteData[] = []
+  addedNotes: NoteData[] = [];
+  removedFromLidNotes: Map<string, NoteData> = new Map();
 
   noteJarLeaveEmitter : EventEmitter<NoteData> = new EventEmitter<NoteData>();
 
@@ -34,7 +37,7 @@ export class NotesService {
   });
 
 
-  constructor(private notesApiService: NotesApiService) {}
+  constructor(private notesApiService: NotesApiService, public dialog: MatDialog) {}
 
   getIncomingNoteStream(){
     return this.notesStream;
@@ -44,8 +47,28 @@ export class NotesService {
     return this.noteJarLeaveEmitter;
   }
 
-  emitNoteJarDisplay(note : NoteData){
-    return note;
+  removeFromJar(note : NoteData) {
+    if (this.removedFromLidNotes.has(note.id)) {
+      return;
+    }
+
+    this.removedFromLidNotes.set(note.id, note);
+
+    this.openNote(note);
+  }
+
+  openNote(note : NoteData){
+    console.log(note)
+
+    const dialogRef = this.dialog.open(NotesDialogComponent, {
+      width: '600px',
+      data: note,
+      panelClass: "my-mat-dialog-container"
+    });
+
+    dialogRef.afterClosed().subscribe(result => {
+      console.log('The dialog was closed');
+    });
   }
 
   private async updateNotesData() {

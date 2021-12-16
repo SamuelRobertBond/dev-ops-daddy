@@ -1,1 +1,20 @@
 /* You can add global styles to this file, and also import other style files */
+
+html, body { height: 100%; }
+body { margin: 0; font-family: Roboto, "Helvetica Neue", sans-serif; }
+
+
+.my-mat-dialog-container {
+    animation: slideup 2s 1;
+    transform: translateY(0px);
+}
+
+@keyframes slideup {
+    from {
+        transform: translateY(calc((100vh / 2) + 300px));
+    }
+  
+    to {
+        transform: translateY(0px);
+    }
+  }
