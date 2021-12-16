@@ -1,0 +1,21 @@
+$jar-width: 300px; // subject to change
+
+// likely temporary
+canvas {
+    background: white !important;
+}
+
+.physics-container {
+    width: 100vw;
+    height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    img {
+        pointer-events: none;
+        position: absolute;
+        top: calc(50% - #{$jar-width / 2});
+        width: $jar-width; // subject to change
+    }
+}

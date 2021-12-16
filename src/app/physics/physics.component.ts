@@ -41,7 +41,7 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
     this.world = this.engine.world
     this.render = Render.create({
       engine: this.engine,
-      canvas: this.canvas
+      canvas: this.canvas,
     })
 
     Events.on(this.engine, "collisionStart", (data) => {
