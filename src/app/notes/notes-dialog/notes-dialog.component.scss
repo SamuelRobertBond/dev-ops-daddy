@@ -9,5 +9,31 @@
 img {
     position: absolute;
     top: -66px;
-    left: -65px;
+    left: -73px;
+    transform: scale(.95);
+}
+
+div {
+    font-family: 'Dancing Script', cursive;
+    font-size: 20px;
+}
+
+.row-note {
+    height: 85%;
+}
+
+.message {
+    display: flex;
+    text-align: center;
+    align-items: center;
+}
+
+p {
+    width: 100%;
+}
+
+.from {
+    padding-right: 2.5em;
+    width: 100%;
+    text-align: right;
 }
