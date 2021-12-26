@@ -5,7 +5,7 @@ import { NotesApiService } from './notes-api.service';
 import { first } from "rxjs/operators"
 import { EventEmitter } from '@angular/core';
 import { MatDialog } from '@angular/material/dialog';
-import { NotesDialogComponent } from '../notes-dialog/notes-dialog.component';
+import { NotesDialogComponent } from '../components/notes-dialog/notes-dialog.component';
 
 @Injectable({
   providedIn: 'root'
@@ -47,28 +47,35 @@ export class NotesService {
     return this.noteJarLeaveEmitter;
   }
 
-  removeFromJar(note : NoteData) {
+  async removeFromJar(note : NoteData) {
     if (this.removedFromLidNotes.has(note.id)) {
-      return;
+      return false;
     }
 
     this.removedFromLidNotes.set(note.id, note);
 
-    this.openNote(note);
+    return this.openNote(note);
   }
 
   openNote(note : NoteData){
     console.log(note)
 
+    // Fire event to release mouse constraint
+
     const dialogRef = this.dialog.open(NotesDialogComponent, {
       width: '600px',
       data: note,
-      panelClass: "my-mat-dialog-container"
+      panelClass: "dialog-container"
     });
 
+    let resolution = null;
+    let p = new Promise((res) => {resolution = res;})
     dialogRef.afterClosed().subscribe(result => {
-      console.log('The dialog was closed');
+      // Fire event to renable constraints
+      resolution(true)
     });
+
+    return p;
   }
 
   private async updateNotesData() {

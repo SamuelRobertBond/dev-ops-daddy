@@ -1,5 +1,6 @@
+import { ImplicitReceiver } from '@angular/compiler';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
-import { Bodies, Composite, Engine, Events, IPair, Mouse, MouseConstraint, Render, Runner, World } from 'matter-js';
+import { Bodies, Body, Composite, Constraint, Engine, Events, IPair, Mouse, MouseConstraint, Render, Runner, World } from 'matter-js';
 import { NotesService } from '../notes/services/notes.service';
 
 @Component({
@@ -17,6 +18,7 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
   render: Render
   runner: Runner
   world: World
+  mouse: Mouse
 
   marbles: any[]
   mouseConstraint: MouseConstraint
@@ -25,13 +27,47 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
   readonly NOTE_ADD_DEVIATION = 20
 
-  constructor(private notesService: NotesService) { }
+  constructor(private notesService: NotesService) {}
 
   ngOnInit() {
     this.notesService.getIncomingNoteStream().subscribe((n) => {
       let rand = Math.random() * (Math.random() > .5 ? 1 : -1)
-      World.add(this.world, Bodies.circle(400 + (this.NOTE_ADD_DEVIATION * rand), 300, 24, { restitution: .6, plugin: { type: "note", data: n } }))
+
+      let body = Bodies.rectangle(400 + (this.NOTE_ADD_DEVIATION * rand), 300, 48, 48, {
+        restitution: .6,
+        render: {
+          sprite: {
+            texture: n.imageUrl,
+            xScale: 1,
+            yScale: 1
+          }
+        },
+        plugin: { type: "note", data: n }
+      })
+
+      // Get Image
+      let img = new Image()
+      img.src = n.imageUrl
+
+      let imageLoader = document.getElementById("image-loader");
+
+      img.onload = () => {
+
+        // Scale texture to body size
+        body.render.sprite.xScale = (body.bounds.max.x - body.bounds.min.x) / img.width
+        body.render.sprite.yScale = (body.bounds.max.y - body.bounds.min.y) / img.height
+
+        imageLoader.removeChild(img)
+
+        World.add(this.world, body)
+      }
+
+      // Load Image
+      imageLoader.appendChild(img)
+
+
     })
+
   }
 
   ngAfterViewInit(): void {
@@ -42,26 +78,16 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
     this.render = Render.create({
       engine: this.engine,
       canvas: this.canvas,
-    })
-
-    Events.on(this.engine, "collisionStart", (data) => {
-      for(let p of data.pairs){
-        this.processCollision(p)
+      options: {
+        wireframes: false
       }
     })
 
-    let mouse = Mouse.create(this.render.canvas)
-    this.mouseConstraint = MouseConstraint.create(this.engine, {
-      mouse: mouse,
-      constraint: {
-        stiffness: 0.02,
-        render: {
-          visible: false
-        }
-      } as any // Type definition for this is fucked up
+    Events.on(this.engine, "collisionStart", (data) => {
+      for (let p of data.pairs) {
+        this.processCollision(p)
+      }
     })
-
-    Composite.add(this.world, this.mouseConstraint)
 
     Render.lookAt(this.render, {
       min: { x: 0, y: 0 },
@@ -76,21 +102,23 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
     Render.run(this.render);
     Runner.run(this.runner, this.engine);
 
+
+    this.initMouseConstraint()
   }
 
 
   private createWalls() {
 
     let walls = [
-      Bodies.rectangle(400, 0, 800, 50, { isStatic: true }),
-      Bodies.rectangle(400, 600, 800, 50, { isStatic: true }),
-      Bodies.rectangle(800, 300, 50, 600, { isStatic: true }),
-      Bodies.rectangle(0, 300, 50, 600, { isStatic: true }),
-      Bodies.rectangle(250, 425, 50, 300, { isStatic: true }),
-      Bodies.rectangle(550, 425, 50, 300, { isStatic: true }),
+      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: 0 } }),
+      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: 0 } }),
+      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: 0 } }),
+      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: 0 } }),
+      Bodies.rectangle(250, 425, 50, 300, { isStatic: true, render: { opacity: 0 } }),
+      Bodies.rectangle(550, 425, 50, 300, { isStatic: true, render: { opacity: 0 } }),
 
-      Bodies.rectangle(280, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * 45 }),
-      Bodies.rectangle(520, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * -45 })
+      Bodies.rectangle(280, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * 45, render: { opacity: 0 } }),
+      Bodies.rectangle(520, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * -45, render: { opacity: 0 } })
     ]
 
     for (let w of walls) {
@@ -100,11 +128,26 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
   }
 
   private createSensors() {
+
     Bodies.rectangle(520, 255, 50, 100, { isSensor: true })
-    World.add(this.world, Bodies.rectangle(400, 210, 205, 10, { isStatic: true, isSensor: true, plugin: { type: "lid" } }))
+    World.add(this.world, Bodies.rectangle(400, 210, 205, 10, { isStatic: true, render: { opacity: 0 }, isSensor: true, plugin: { type: "lid" } }))
   }
 
-  private processCollision(pair: IPair) {
+  private initMouseConstraint() {
+    this.mouse = Mouse.create(this.render.canvas)
+    this.mouseConstraint = MouseConstraint.create(this.engine, {
+      mouse: this.mouse,
+      constraint: {
+        stiffness: 0.02,
+        render: {
+          visible: false
+        }
+      } as any // Type definition for this is fucked up
+    })
+    Composite.add(this.world, this.mouseConstraint)
+  }
+
+  private async processCollision(pair: IPair) {
     let a = pair.bodyA;
     let b = pair.bodyB;
 
@@ -123,9 +166,18 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
     if (a.plugin?.type != "note" || b.plugin?.type != "lid") {
       return; // Nothing to do as it does not meet our criteria
     }
-    
-    
-    this.notesService.removeFromJar(a.plugin.data)
+
+
+   
+    this.mouseConstraint.constraint.stiffness = 0
+    let result = await this.notesService.removeFromJar(a.plugin.data)
+    if (result == true) {
+      Composite.remove(this.world, <any>this.mouseConstraint)
+      this.initMouseConstraint();
+    }else{
+      this.mouseConstraint.constraint.stiffness = 0.02
+    }
+
   }
 
 }

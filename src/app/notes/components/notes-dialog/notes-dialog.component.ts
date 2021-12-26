@@ -1,6 +1,6 @@
 import { Component, Inject, OnInit } from '@angular/core';
 import { MAT_DIALOG_DATA } from '@angular/material/dialog';
-import { NoteData } from '../interface/note-data.interface';
+import { NoteData } from '../../interface/note-data.interface';
 
 @Component({
   selector: 'app-notes-dialog',
