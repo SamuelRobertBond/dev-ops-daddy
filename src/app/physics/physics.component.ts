@@ -25,6 +25,9 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
   updateInterval
 
+  readonly NOTE_WIDTH = 48;
+  readonly NOTE_HEIGHT = 64;
+
   readonly NOTE_ADD_DEVIATION = 20
 
   constructor(private notesService: NotesService) {}
@@ -33,8 +36,8 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
     this.notesService.getIncomingNoteStream().subscribe((n) => {
       let rand = Math.random() * (Math.random() > .5 ? 1 : -1)
 
-      let body = Bodies.rectangle(400 + (this.NOTE_ADD_DEVIATION * rand), 300, 48, 48, {
-        restitution: .6,
+      let body = Bodies.rectangle(400 + (this.NOTE_ADD_DEVIATION * rand), 300, n.width != null ? n.width : this.NOTE_WIDTH, n.height != null ? n.height : this.NOTE_HEIGHT, {
+        restitution: .01,
         render: {
           sprite: {
             texture: n.imageUrl,
@@ -42,7 +45,7 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
             yScale: 1
           }
         },
-        plugin: { type: "note", data: n }
+        plugin: { type: n.ignoreNote != true ? "note" : "image", data: n }
       })
 
       // Get Image
@@ -108,10 +111,10 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
   private createWalls() {
 
     let walls = [
-      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: 0 } }),
-      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: 0 } }),
-      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: 0 } }),
-      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: 0 } }),
+      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: 1 } }),
+      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: 1 } }),
+      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: 1 } }),
+      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: 1 } }),
       Bodies.rectangle(250, 425, 50, 300, { isStatic: true, render: { opacity: 0 } }),
       Bodies.rectangle(550, 425, 50, 300, { isStatic: true, render: { opacity: 0 } }),
 

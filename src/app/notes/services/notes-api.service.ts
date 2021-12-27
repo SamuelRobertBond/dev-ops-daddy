@@ -18,7 +18,10 @@ export class NotesApiService {
           id: "asfd7iyasdfhn",
           from: "Sam",
           message: "This is the note data",
-          imageUrl: "https://media-exp1.licdn.com/dms/image/C5603AQHND4o3AAoBhQ/profile-displayphoto-shrink_200_200/0/1516628535277?e=1646265600&v=beta&t=1jU_32qnmG9W2h33V6LuMPOuS2wH2NN6LFCEiCm7tcg"
+          imageUrl: "https://cdn.discordapp.com/attachments/547641347637510154/925146220886900746/Sakaiger.png",
+          width: 128,
+          height: 128,
+          ignoreNote: true
         },
         {
           id: "afsdjkhlaskdfh",
