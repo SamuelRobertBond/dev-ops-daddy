@@ -64,8 +64,6 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
       // Load Image
       imageLoader.appendChild(img)
-
-
     })
 
   }
