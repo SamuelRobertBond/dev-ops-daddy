@@ -1,0 +1,47 @@
+<div class="container py-5">
+    <div class="row">
+        <div class="col-12">
+            <h1>New Note</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-6 form-group" [formGroup]="formGroup">
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label for="from">From</label>
+                    <input class="form-control" type="text" id="from" formControlName="from">        
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-12">
+                    <label for="message">Message</label>
+                    <textarea class="form-control" rows="4" type="text" id="message" formControlName="message"></textarea>       
+                </div>
+            </div>
+
+            <button class="btn btn-primary" (click)="createNote()">Create New Note</button>
+            
+        </div>
+
+        <div class="col-6 note-col">
+            <div class="note">
+                <div class="row row-note">
+                    <div class="col-12 message">
+                        <p>
+                            {{note.message}}
+                        </p>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12 from">
+                        <span>from: {{note.from}}</span>
+                    </div>
+                </div>
+            </div>
+            
+            <img src="/assets/wreath.png" alt="wreath">
+        </div>
+    </div>
+</div>

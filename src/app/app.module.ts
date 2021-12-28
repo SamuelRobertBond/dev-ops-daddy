@@ -6,18 +6,23 @@ import { PhysicsComponent } from './physics/physics.component';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { NotesDialogComponent } from './notes/components/notes-dialog/notes-dialog.component';
 import { MatDialogModule } from '@angular/material/dialog';
+import { CreateNoteComponent } from './create-note/create-note.component';
+import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 @NgModule({
   declarations: [
     AppComponent,
     PhysicsComponent,
-    NotesDialogComponent
+    NotesDialogComponent,
+    CreateNoteComponent
   ],
   imports: [
     BrowserModule,
     AppRoutingModule,
     BrowserAnimationsModule,
-    MatDialogModule
+    MatDialogModule,
+    FormsModule,
+    ReactiveFormsModule
   ],
   providers: [],
   bootstrap: [AppComponent]

@@ -1,0 +1,16 @@
+@import '../notes/components/notes-dialog/notes-dialog.component.scss';
+
+img {
+    top: -83px;
+    left: 10px;
+}
+
+.note-col {
+    position: relative;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.note {
+    width: 552px;
+}
