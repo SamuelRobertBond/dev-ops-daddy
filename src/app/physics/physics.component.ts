@@ -26,18 +26,20 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
   updateInterval
 
-  readonly NOTE_WIDTH = 48;
-  readonly NOTE_HEIGHT = 64;
+  readonly WALL_OPACITY = 1;
+  readonly JAR_OPACITY = .5;
 
+  readonly NOTE_WIDTH = 48;
+  readonly NOTE_HEIGHT = 48;
   readonly NOTE_ADD_DEVIATION = 20
 
   constructor(private notesService: NotesService) { }
 
   ngOnInit() {
-    this.notesService.getIncomingNoteStream().subscribe((n) => {
+    this.notesService.getIncomingNoteStream().subscribe(async (n) => {
       let rand = Math.random() * (Math.random() > .5 ? 1 : -1)
 
-      if(n.collisionLayer >= 32){
+      if (n.collisionLayer >= 32) {
         throw new Error("Collision layer must be less than 32")
       }
 
@@ -61,31 +63,19 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
       })
 
       // Get Image
-      let img = new Image()
-      img.src = n.imageUrl
-
-      let imageLoader = document.getElementById("image-loader");
-
-      img.onload = () => {
-
-        // Scale texture to body size
-        body.render.sprite.xScale = (body.bounds.max.x - body.bounds.min.x) / img.width
-        body.render.sprite.yScale = (body.bounds.max.y - body.bounds.min.y) / img.height
-
-        imageLoader.removeChild(img)
-
-        World.add(this.world, body)
-      }
-
-      // Load Image
-      imageLoader.appendChild(img)
+      await this.setBodyRenderScale(n.imageUrl, body)
+      World.addBody(this.world, body)
     })
 
   }
 
-  ngAfterViewInit(): void {
+  async ngAfterViewInit() {
 
     this.canvas = this.canvasElmRef.nativeElement;
+    this.canvas.style.width = "98vw";
+    this.canvas.style.height = "98vh";
+
+
     this.engine = Engine.create();
     this.world = this.engine.world
     this.render = Render.create({
@@ -102,14 +92,11 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
       }
     })
 
-    Render.lookAt(this.render, {
-      min: { x: 0, y: 0 },
-      max: { x: this.canvas.width, y: this.canvas.height }
-    });
+    this.onResize()
 
     this.runner = Runner.create();
 
-    this.createWalls()
+    await this.createWalls()
     this.createSensors()
 
     Render.run(this.render);
@@ -120,28 +107,44 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
   }
 
 
-  private createWalls() {
+  private async createWalls() {
 
     let collisionFilter: Matter.ICollisionFilter = {
       category: 1,
       mask: 4294967295 // Bitmask 2^32 - 1
     }
 
-    let walls = [
-      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
-      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
-      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
-      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
-      Bodies.rectangle(250, 425, 50, 300, { isStatic: true, render: { opacity: 0 }, collisionFilter: collisionFilter }),
-      Bodies.rectangle(550, 425, 50, 300, { isStatic: true, render: { opacity: 0 }, collisionFilter: collisionFilter }),
 
-      Bodies.rectangle(280, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * 45, render: { opacity: 0 }, collisionFilter: collisionFilter }),
-      Bodies.rectangle(520, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * -45, render: { opacity: 0 }, collisionFilter: collisionFilter })
+
+    let walls = [
+      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: this.WALL_OPACITY }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: this.WALL_OPACITY }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: this.WALL_OPACITY }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: this.WALL_OPACITY }, collisionFilter: collisionFilter }),
+
+      Bodies.rectangle(250, 425, 50, 300, { isStatic: true, render: { opacity: this.JAR_OPACITY }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(550, 425, 50, 300, { isStatic: true, render: { opacity: this.JAR_OPACITY }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(280, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * 45, render: { opacity: this.JAR_OPACITY }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(520, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * -45, render: { opacity: this.JAR_OPACITY }, collisionFilter: collisionFilter })
     ]
 
     for (let w of walls) {
       World.addBody(this.world, w)
     }
+
+    let jar = Bodies.rectangle(400, 375, 350, 440, {
+      isStatic: true, isSensor: true, render: {
+        opacity: 1, sprite: {
+          texture: "/assets/jar.png",
+          xScale: 1,
+          yScale: 1
+        }
+      }, collisionFilter: collisionFilter
+    })
+
+    await this.setBodyRenderScale(jar.render.sprite.texture, jar)
+
+    World.addBody(this.world, jar)
 
   }
 
@@ -196,6 +199,32 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
       this.mouseConstraint.constraint.stiffness = 0.02
     }
 
+  }
+
+  onResize() {
+    Render.lookAt(this.render, {
+      min: { x: 0, y: 0 },
+      max: { x: this.canvas.width, y: this.canvas.height }
+    });
+  }
+
+  private async setBodyRenderScale(url: string, body: Body): Promise<void> {
+    return new Promise((res) => {
+      let img = new Image()
+      img.src = url
+
+      let imageLoader = document.getElementById("image-loader");
+
+      img.onload = () => {
+        imageLoader.removeChild(img)
+        body.render.sprite.xScale = (body.bounds.max.x - body.bounds.min.x) / img.width
+        body.render.sprite.yScale = (body.bounds.max.y - body.bounds.min.y) / img.height
+        res()
+      }
+
+      // Load Image
+      imageLoader.appendChild(img)
+    })
   }
 
 }
