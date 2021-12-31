@@ -5,5 +5,6 @@ export interface NoteData{
     width? : number
     height? : number
     imageUrl? : string // This may or may not stay
+    collisionLayer? : number
     ignoreNote? : boolean
 } 

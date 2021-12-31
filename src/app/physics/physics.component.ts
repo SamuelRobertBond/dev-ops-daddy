@@ -1,5 +1,6 @@
 import { ImplicitReceiver } from '@angular/compiler';
 import { AfterViewInit, Component, ElementRef, OnInit, ViewChild } from '@angular/core';
+import * as Matter from 'matter-js';
 import { Bodies, Body, Composite, Constraint, Engine, Events, IPair, Mouse, MouseConstraint, Render, Runner, World } from 'matter-js';
 import { NotesService } from '../notes/services/notes.service';
 
@@ -30,11 +31,17 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
   readonly NOTE_ADD_DEVIATION = 20
 
-  constructor(private notesService: NotesService) {}
+  constructor(private notesService: NotesService) { }
 
   ngOnInit() {
     this.notesService.getIncomingNoteStream().subscribe((n) => {
       let rand = Math.random() * (Math.random() > .5 ? 1 : -1)
+
+      if(n.collisionLayer >= 32){
+        throw new Error("Collision layer must be less than 32")
+      }
+
+      n.collisionLayer = n.collisionLayer != null ? 2 ** n.collisionLayer : 1
 
       let body = Bodies.rectangle(400 + (this.NOTE_ADD_DEVIATION * rand), 300, n.width != null ? n.width : this.NOTE_WIDTH, n.height != null ? n.height : this.NOTE_HEIGHT, {
         restitution: .01,
@@ -44,6 +51,11 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
             xScale: 1,
             yScale: 1
           }
+        },
+        collisionFilter: {
+          category: 2 ** n.collisionLayer,
+          group: n.collisionLayer,
+          mask: 1
         },
         plugin: { type: n.ignoreNote != true ? "note" : "image", data: n }
       })
@@ -92,7 +104,7 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
     Render.lookAt(this.render, {
       min: { x: 0, y: 0 },
-      max: { x: 800, y: 600 }
+      max: { x: this.canvas.width, y: this.canvas.height }
     });
 
     this.runner = Runner.create();
@@ -110,16 +122,21 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
 
   private createWalls() {
 
-    let walls = [
-      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: 1 } }),
-      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: 1 } }),
-      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: 1 } }),
-      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: 1 } }),
-      Bodies.rectangle(250, 425, 50, 300, { isStatic: true, render: { opacity: 0 } }),
-      Bodies.rectangle(550, 425, 50, 300, { isStatic: true, render: { opacity: 0 } }),
+    let collisionFilter: Matter.ICollisionFilter = {
+      category: 1,
+      mask: 4294967295 // Bitmask 2^32 - 1
+    }
 
-      Bodies.rectangle(280, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * 45, render: { opacity: 0 } }),
-      Bodies.rectangle(520, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * -45, render: { opacity: 0 } })
+    let walls = [
+      Bodies.rectangle(400, 0, 800, 50, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(400, 600, 800, 50, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(800, 300, 50, 600, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(0, 300, 50, 600, { isStatic: true, render: { opacity: 1 }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(250, 425, 50, 300, { isStatic: true, render: { opacity: 0 }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(550, 425, 50, 300, { isStatic: true, render: { opacity: 0 }, collisionFilter: collisionFilter }),
+
+      Bodies.rectangle(280, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * 45, render: { opacity: 0 }, collisionFilter: collisionFilter }),
+      Bodies.rectangle(520, 255, 50, 100, { isStatic: true, angle: Math.PI / 180 * -45, render: { opacity: 0 }, collisionFilter: collisionFilter })
     ]
 
     for (let w of walls) {
@@ -169,13 +186,13 @@ export class PhysicsComponent implements OnInit, AfterViewInit {
     }
 
 
-   
+
     this.mouseConstraint.constraint.stiffness = 0
     let result = await this.notesService.removeFromJar(a.plugin.data)
     if (result == true) {
       Composite.remove(this.world, <any>this.mouseConstraint)
       this.initMouseConstraint();
-    }else{
+    } else {
       this.mouseConstraint.constraint.stiffness = 0.02
     }
 

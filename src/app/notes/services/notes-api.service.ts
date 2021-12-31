@@ -21,6 +21,7 @@ export class NotesApiService {
           imageUrl: "https://cdn.discordapp.com/attachments/547641347637510154/925146220886900746/Sakaiger.png",
           width: 128,
           height: 128,
+          collisionLayer: 2,
           ignoreNote: true
         },
         {
